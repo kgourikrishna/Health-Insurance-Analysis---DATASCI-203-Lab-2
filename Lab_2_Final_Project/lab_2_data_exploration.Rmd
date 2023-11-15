@@ -1,0 +1,131 @@
+---
+title: "Lab2_exploration"
+output: html_document
+date: "2023-07-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+```
+
+
+```{r}
+library(tidyverse)
+library(wooldridge)
+library(car)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+
+```
+
+```{r}
+cancer <- read.csv('~/lab-2-lab2-malachite/Lab 2 Final Project/data/cancer_reg.csv')
+house <- read.csv('~/lab-2-lab2-malachite/Lab 2 Final Project/data/avg-household-size.csv')
+```
+
+```{r plotting important features}
+ggplot(data = cancer, aes( x =pctpubliccoveragealone)) + geom_histogram() #normally dis
+ggplot(data = cancer, aes( x =pctprivatecoveragealone)) + geom_histogram()#normally dis
+
+
+```
+```{r average deaths per year}
+ggplot(data = cancer, aes( x =avgdeathsperyear)) + geom_histogram() # right skewed-- perhaps use some kind log transformation
+ggplot(data = cancer, aes( x = log(avgdeathsperyear))) + geom_histogram() #much more normally distributed
+```
+```{r evaluating the reliability of different measures of pct health insurance coverage}
+cancer$pctprivatecoverage[3] - cancer$pctprivatecoveragealone[3] #= percentage of people who have both private and public
+cancer$pctpubliccoverage[3] - cancer$pctpubliccoveragealone[3] #= percentage of people who have both private and public
+
+#there is not a 1-1 relationship between these numbers, as you can see there is some level of difference between the two numbers-- there is some level of error. 
+```
+
+
+```{r}
+
+```
+
+
+```{r transforming data to get pct of people who have both insurance}
+cancer <- transform(cancer, publicandprivate_1 = pctprivatecoverage - pctprivatecoveragealone)
+cancer <- transform(cancer, publicandprivate_2 = pctpubliccoverage - pctpubliccoveragealone)
+#we are attempting to get the percentage of people who have both pub and priv insurance from both variables
+
+```
+
+```{r average function}
+#function averages two values if both of them are not NA, otherwise returns those values. 
+get_average <- function(value1, value2){
+  
+  if (!is.na(value1) && !is.na(value2)){
+    result = (value1 + value2)/2
+  }
+
+  else if (!is.na(value1)){
+    result = value1
+    
+  }
+  else if (!is.na(value2)){
+    result = value2
+  }
+  
+  else{
+    result = NULL
+  }
+  return(round(result, 2))
+}
+
+```
+
+
+```{r averages the values of pct of people with both insurances}
+results <- c()
+for (i in 1:nrow(cancer)){
+  results <- c(results, get_average(cancer$publicandprivate_1[i], cancer$publicandprivate_2[i]))
+}
+
+cancer$publicandprivate = results
+```
+
+
+```{r filling in NA values in pct private coverae alone}
+#if NA value in pctprivatecoveragealone, we estimate it by subtracting pctprivatecoverage from pct who have both public and private coverage.
+
+result <- c()
+for (i in 1:nrow(cancer)){
+  
+  if (is.na(cancer$pctprivatecoveragealone[i])){
+     x = cancer$pctprivatecoverage[i] - cancer$publicandprivate[i]
+    result <- c(result, x)
+  }
+  
+  else{
+    result <- c(result, cancer$pctprivatecoveragealone[i])
+  }
+}
+
+cancer$pctprivatecoveragealone = result
+```
+
+
+```{r estimating pct uninsured}
+
+cancer <- transform(cancer, pctuninsured = 100 - (pctpubliccoveragealone + pctprivatecoveragealone + publicandprivate))
+
+```
+
+```{r removing unnecessary columns}
+
+cancer <- cancer[,!names(cancer) %in% c("publicandprivate_1", "publicandprivate_2", "pctuninsured_1")]
+
+#write new csv file with cleaned data. We can use this directly in the Lab 2 report instead of having to duplicate this code there. 
+
+write_csv(cancer, file = '~/lab-2-lab2-malachite/Lab 2 Final Project/data/cancer_cleaned.csv')
+```
+
+
+
+

@@ -1,0 +1,135 @@
+---
+title: "Estimating the Impact of Public vs. Private Insurance on Cancer Mortality Rate"
+author: 'Conner Davis, Kushal Gourikrishna, Michael Jaweed, Dong Jian'
+output:
+  pdf_document:
+    toc: yes
+    number_sections: no
+  word_document:
+    toc: yes
+---
+
+```{=tex}
+\newpage
+\setcounter{page}{1}
+```
+```{r load packages and set options, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(magrittr)
+library(stargazer)
+library(sandwich)
+library(lmtest)
+library(gridExtra)
+library(car)
+
+theme_set(theme_bw())
+```
+
+```{r load data, echo=FALSE, message=FALSE, warning=FALSE}
+cancer_data <- read_csv("~/lab-2-lab2-malachite/Lab 2 Final Project/data/cancer_cleaned.csv")
+avg_household <- read_csv("~/lab-2-lab2-malachite/Lab 2 Final Project/data/avg-household-size.csv")
+```
+
+## Introduction
+
+Access to healthcare and health insurance continues to be a hot button topic in the United States. While a segment of the population prefer the optionality of the private insurance market, others continue to advocate for a free and public health insurance system for all. It has been claimed that having health insurance decreases mortality rate. In 2021 a study was performed that concluded people who newly enrolled in health insurance after being uninsured saw reduced mortality over the next two year period.[^1] Less has been investigated; however, in the difference between private insurance and public insurance in terms of mortality rate. While being insured is shown to decrease mortality compared to the uninsured, is it enough for uninsured people to enroll in public healthcare or is there still a significant difference in mortality rate between public healthcare and private healthcare?
+
+[^1]: Jacob Goldin, Ithai Z Lurie, Janet McCubbin. "Health Insurance and Mortality: Experimental Evidence from Taxpayer Outreach" The Quarterly Journal of Economics(2021).
+
+Politicians can influence the breakdown of insurance types in their specific county by either pushing for public insurance programs, advocating and assisting with private insurance enrollment, or if the impact is found to be insignificant, divert funds to other methods.
+
+We would like to estimate the impact that a particular type of insurance has on mortality rate. Specifically, the data set we will be working with looks at mortality rate due to cancer. We are working with a dataset that reports the percentage of people within a particular county in the United States that has private insurance or public insurance along with a multitude of other socioeconomic factors. The model aims to estimate mortality rate due to cancer based on tuning the percentage of privately insured and publicly insured people.
+
+## Data and Methodology
+
+```{r create exploratory set and confirmation set of data,echo=FALSE,message=FALSE, warning=FALSE}
+#make this example reproducible
+set.seed(1)
+
+#create ID column
+cancer_data$id <- 1:nrow(cancer_data)
+
+#use 70% of dataset as confirmation set and 30% as exploratory set 
+cancer_data_confirm <- cancer_data %>% dplyr::sample_frac(0.70)
+cancer_data_explore  <- dplyr::anti_join(cancer_data, cancer_data_confirm, by = 'id')
+```
+
+In the dataset, we chose cancer mortality rate as opposed to average number of cancer related deaths in a county as our dependent variable. Cancer mortality rate adjusts for population by measuring a mean rate per capita (100,000 people). From exploratory plots, the distribution of cancer mortality rate was much more normal compared to the very skewed distribution average number of cancer related deaths. Figure 1 shows cancer mortality rate against the percent of privately insured and publicly insured people.
+
+```{r build plot,echo=FALSE,message=FALSE, warning=FALSE, out.width='80%', fig.align='center'}
+plot1 <- cancer_data_explore %>% 
+  ggplot() + 
+    aes(y=target_deathrate, x = pctprivatecoverage) + 
+    geom_point(color='blue') +
+    geom_smooth(se=FALSE, color='black')
+
+plot2 <- cancer_data_explore %>% 
+  ggplot() + 
+    aes(y=target_deathrate, x = pctpubliccoverage) + 
+    geom_point(color = 'red') +
+    geom_smooth(se=FALSE, color='black')
+
+plot3 <- cancer_data_explore %>% 
+  ggplot() + 
+    aes(y=target_deathrate, x = pctuninsured) + 
+    geom_point(color = 'green') +
+    geom_smooth(se=FALSE, color='black')
+
+#grid.arrange(plot1, plot2, nrow=2)
+
+
+plot(cancer_data_confirm$pctprivatecoverage,cancer_data_confirm$target_deathrate, xlab = 'Percent of People with Insurance (Public or Private)', ylab = 'Cancer Mortality Rate', main='Cancer Mortality Rate based on Insurance Type')
+
+points(cancer_data_confirm$pctprivatecoverage,cancer_data_confirm$target_deathrate, col='cadetblue4', pch=1)
+points(cancer_data_confirm$pctpubliccoverage,cancer_data_confirm$target_deathrate, col='red4', pch=1)
+#points(cancer_data_explore$pctuninsured,cancer_data_explore$target_deathrate, col='green', pch=1)
+
+
+abline(lm( cancer_data_confirm$target_deathrate ~ cancer_data_confirm$pctprivatecoverage), col='cadetblue4', lwd=4)
+abline(lm(cancer_data_confirm$target_deathrate ~ cancer_data_confirm$pctpubliccoverage), col='red4',lwd=4)
+legend(x = "topright",title='Insurance Type',legend=c("Private Insurance", "Public Insurance"), col = c("cadetblue4","red4"), cex=0.75, pch=1)
+
+```
+
+Upon initial review, we see that with an increase in percent of privately insured people we see a decrease in cancer mortality rate and the opposite relationship is displayed for publicly insured people. Both relationships are shown to be roughly linear which allows us to continue to create some OLS regression models. We create a linear regression in the following form: $$
+  \widehat{Cancer Mortality Rate}=\beta_0 + \beta_1\cdot (percent private coverage only) + \beta_2\cdot (percentpubliccoverageonly) + \mathbf{S\gamma} + \mathbf{\epsilon}
+$$ In this equation $\beta_1$ represents the change in cancer mortality (positive or negative) per 1% increase in privately insured people in the USA, $\beta_2$ represents the change in cancer mortality (positive or negative) per 1% increase in publicly insured people in the USA, $\mathbf{S}$ is a row vector of additional socioeconomic factors such as poverty percentage, unemployment percentage,etc., $\mathbf{\gamma}$ is a column vector of associated coefficients and $\mathbf{\epsilon}$ is the representation of error.
+
+A model including the percent of uninsured people per county was tested on the exploratory data set, but due to high correlation between the three insurance percentages this model was difficult to interpret. For simplicity and interpretability, that term was dropped.
+
+## Results
+
+```{r build model, echo=FALSE,message=FALSE, warning=FALSE,results='asis'}
+model <- lm(target_deathrate ~ pctprivatecoverage + pctpubliccoverage, data=cancer_data_confirm)
+se_model <- model %>% 
+  vcovHC(type = "HC1") %>% 
+  diag() %>% 
+  sqrt()
+
+model2 <- lm(target_deathrate ~ pctprivatecoverage + pctpubliccoverage + incidencerate + log(povertypercent), data=cancer_data_confirm)
+se_model2 <- model2 %>% 
+  vcovHC(type = "HC1") %>% 
+  diag() %>% 
+  sqrt()
+
+model3 <- lm(target_deathrate ~ pctprivatecoverage + pctpubliccoverage + incidencerate + log(povertypercent) + pctunemployed16_over + pctsomecol18_24, data=cancer_data_confirm)
+se_model3 <- model3 %>% 
+  vcovHC(type = "HC1") %>% 
+  diag() %>% 
+  sqrt()
+
+stargazer(model,model2,model3, 
+          type='latex',
+          se = list(se_model,se_model2,se_model3),
+          star.cutoffs = c(0.05, 0.01, 0.001),
+          header=FALSE,
+          title = "Estimated Regressions",
+          dep.var.caption  = "Output Variable: Cancer Mortality Rate (per 100,000)",
+          dep.var.labels   = "")
+```
+
+## Limitations
+
+With large sample models, there are two assumptions that should be met: I.I.D data and having a unique BLP.
+
+## Conclusion

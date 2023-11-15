@@ -1,0 +1,18 @@
+---
+title: "Lab 2 Research Proposal"
+author: 'Conner Davis, Kushal Gourikrishna, Michael Jaweed, Dong An Jian'
+header-includes:
+    - \usepackage{setspace}\doublespacing
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Our research seeks to answer the question: How does health insurance type(public, private, or uninsured) affect incidents of cancer and subsequently cancer mortality?
+
+Our data set contains health-related information and socio-economic data aggregated from multiple sources including the American Community Survey, clinicaltrials.gov, and cancer.gov, spanning the years 2010-2016. The data is measured at the county-level for each feature, and is spread across a variety of counties across the U.S. We will operationalize health insurance type by looking at the percentage breakdown of privately insured, publicly insured, and uninsured people within counties across the United States. Furthermore, we can explore certain other factors such as poverty rate and education level. The dataset we would like to work with can be found here:
+https://www.kaggle.com/datasets/thedevastator/uncovering-trends-in-health-outcomes-and-socioec
+
+To understand the relationship between insurance type and cancer-incidence and mortality rates, we will conduct a regression analysis. We will attept to conduct an explanatory analysis in the areas where we can confidently meet the assumptions necessary and reasonable claim causality, otherwise we will conduct descriptive analysis to make associative claims. Potential actors in our study could be politicians or government agencies who have the power to implement or advocate governmental programs related to health insurance. Specifically, politicians can tune insurance rates within areas in the United States by either implementing policies that broaden public insurance coverage or advocating for programs similar to Covered California that assist citizens with finding appropriate private insurers at affordable rates. Conversely, we may find that the the percentage of publicly insured or privately insured people has no impact on cancer related death rate and politicians may choose to do nothing, or perhaps divert funds to programs which have more impact towards their goals of improving cancer mortality. Based on the results of our analysis, we hope to inform government agencies, NGO's, and political actors and offer specific policy recommendations.  
