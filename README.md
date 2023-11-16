@@ -1,26 +1,7 @@
-# lab_2
+# Health Insurance Statistical Analysis
 
-The final project for MIDS w203. In this lab, students will apply what they have learned about building linear models to produce a report that analyzes a specific research question. 
-
-# Assignment Prompt
-
-The assignment prompt is in `./assignment.Rmd` and rendered in `./assignment.pdf`. 
-
-# Project Organization
-
-We have created a folder structure to help you organize your work. This is based on [cookiecutter data science](https://drivendata.github.io/cookiecutter-data-science).
+This repository contains the final project for MIDS DATASCI 203. The goal was to conduct a statistical analysis on a variety of socioeconomic factors including poverty rate, education, health insurance, etc. and determine impact on death rate due to cancer. The final product is contained in both PDF and .RMD form with the title Lab 2 Final Project. 
 
 
-    ├── LICENSE
-    ├── README.md          <- The top-level README describing the project aims
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   └── processed      <- The final, canonical data sets for modeling.
-    ├── notebooks          <- .Rmd notebooks. 
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    └── src                <- Source code for use in this project.
-        └── data           <- Scripts to download or generate data
 
 
